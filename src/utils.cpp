@@ -1,13 +1,16 @@
 #include "utils.h"
 #include <random>
 #include <algorithm>
+#include <fstream>
+#include <string>
+
+
 using namespace std;
 
-unordered_map<int, vector<int>> build_adj_list(const unordered_map<int, vector<pair<int,float>>>& adj_weighted)
-{
+
+unordered_map<int, vector<int>> build_adj_list(const unordered_map<int, vector<pair<int,float>>>& adj_weighted) {
     unordered_map<int, vector<int>> out;
-    for (auto it = adj_weighted.begin(); it != adj_weighted.end(); ++it)
-    {
+    for (auto it = adj_weighted.begin(); it != adj_weighted.end(); ++it) {
         int u = it->first;
         const vector<pair<int,float>>& vec = it->second;
         for (size_t i = 0; i < vec.size(); ++i) out[u].push_back(vec[i].first);
@@ -15,11 +18,17 @@ unordered_map<int, vector<int>> build_adj_list(const unordered_map<int, vector<p
     return out;
 }
 
-float evaluate_holdout_hit_at_k(const unordered_map<int, vector<int>>& adj_list, unordered_map<int, unordered_map<int,float>>& feats, int sample_size, int k)
-{
+float evaluate_holdout_hit_at_k(const unordered_map<int, 
+                                vector<int>>& adj_list, 
+                                unordered_map<int, 
+                                unordered_map<int,float>>& feats, 
+                                int sample_size, 
+                                int k) {
     vector<int> users;
-    for (auto it = adj_list.begin(); it != adj_list.end(); ++it) users.push_back(it->first);
-    if ((int) users.size() == 0) return 0.0f;
+    for (auto it = adj_list.begin(); it != adj_list.end(); ++it) 
+        users.push_back(it->first);
+    if ((int) users.size() == 0) 
+        return 0.0f;
     random_device rd;
     mt19937 gen(rd());
     shuffle(users.begin(), users.end(), gen);
@@ -77,4 +86,27 @@ float evaluate_holdout_hit_at_k(const unordered_map<int, vector<int>>& adj_list,
         if (hit) ++hits;
     }
     return (float) hits / (float) take;
+}
+
+vector<string> load_text_columns_from_file(const string& path) {
+    vector<string> out;
+    ifstream in(path);
+    if (! in.is_open())
+        return out;
+
+    string line;
+    while (getline(in, line))
+    {
+        // trim both ends
+        size_t a = 0;
+        while (a < line.size() && isspace((unsigned char)line[a])) ++a;
+        size_t b = line.size();
+        while (b > a && isspace((unsigned char)line[b-1])) --b;
+        if (b <= a) continue;
+        string token = line.substr(a, b - a);
+        if (token.size() == 0) continue;
+        if (token[0] == '#') continue;
+        out.push_back(token);
+    }
+    return out;
 }
