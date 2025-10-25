@@ -16,7 +16,9 @@ public:
     Encoder(
         const vector<string>& colKeys,
         const unordered_map<string, unordered_map<string,int>>& token2id_per_col,
-        const unordered_map<string,int>& club_to_id);
+        const unordered_map<string,int>& club_to_id,
+        const unordered_map<string,int>& address_to_id,
+        const unordered_map<int, vector<int>>& adjacency_in);
 
     void pass2(const string& profiles_tsv, const string& out_users_csv);
     void save_addresses_map(const string& out_csv) const;
@@ -25,6 +27,8 @@ private:
     vector<string> colKeys;
     const unordered_map<string, unordered_map<string,int>>& token2id_per_col;
     const unordered_map<string,int>& club_to_id;
+    const unordered_map<string,int>& address_to_id;
+    const unordered_map<int, vector<int>>& adjacency;
 
     unordered_map<string,int> region_to_id;
 
@@ -37,7 +41,6 @@ private:
         const string& key,
         Tokenizer& tok,
         Lemmatiser& lem) const;
-    int get_or_add_region_id(const string& region);
+    int lookup_region_id(const string& region) const;
 };
-
 #endif

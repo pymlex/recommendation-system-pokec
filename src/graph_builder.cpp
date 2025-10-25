@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <vector>
 
 using namespace std;
 
@@ -86,11 +87,16 @@ bool GraphBuilder::save_serialized(const string& path) const
     if (! out.is_open())
         return false;
 
-    for (auto it = adjacency.begin(); it != adjacency.end(); ++it)
+    vector<int> keys;
+    keys.reserve(adjacency.size());
+    for (auto it = adjacency.begin(); it != adjacency.end(); ++it) keys.push_back(it->first);
+    sort(keys.begin(), keys.end());
+
+    for (size_t ki = 0; ki < keys.size(); ++ki)
     {
-        int uid = it->first;
+        int uid = keys[ki];
         out << uid;
-        const vector<pair<int,float>>& vec = it->second;
+        const vector<pair<int,float>>& vec = adjacency.at(uid);
         for (size_t i = 0; i < vec.size(); ++i)
         {
             out << "," << vec[i].first;
