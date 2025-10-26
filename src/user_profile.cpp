@@ -77,7 +77,7 @@ bool load_users_encoded(const string& users_encoded_csv,
         else if (h == "public" || h == "public_flag") idx_public = (int)i;
         else if (h == "gender") idx_gender = (int)i;
         else if (h == "region_id" || h == "region") idx_region = (int)i;
-        else if (h == "age" || h == "age" || h == "a g e") idx_age = (int)i;
+        else if (h == "age" || h == "a g e") idx_age = (int)i;
         else if (h == "clubs") idx_clubs = (int)i;
         else if (h == "friends") idx_friends = (int)i;
     }
@@ -104,14 +104,27 @@ bool load_users_encoded(const string& users_encoded_csv,
         } else p.public_flag = -1;
 
         if (idx_gender >= 0 && (size_t)idx_gender < parts.size() && parts[idx_gender].size()) {
-            string g = parts[idx_gender];
-            // normalize small
-            p.gender = g;
+            p.gender = parts[idx_gender];
         } else p.gender.clear();
 
+        // region_parts: parse "p1;p2;p3" (ids or empty)
+        p.region_parts = { -1, -1, -1 };
         if (idx_region >= 0 && (size_t)idx_region < parts.size() && parts[idx_region].size()) {
-            p.region_id = atoi(parts[idx_region].c_str());
-        } else p.region_id = -1;
+            string rf = parts[idx_region];
+            if (rf.size() >= 2 && rf.front() == '"' && rf.back() == '"') rf = rf.substr(1, rf.size()-2);
+            stringstream rs(rf);
+            string tok;
+            int part_idx = 0;
+            while (getline(rs, tok, ';') && part_idx < 3) {
+                if (!tok.empty()) {
+                    p.region_parts[part_idx] = atoi(tok.c_str());
+                } else {
+                    p.region_parts[part_idx] = -1;
+                }
+                ++part_idx;
+            }
+            for (; part_idx < 3; ++part_idx) p.region_parts[part_idx] = -1;
+        } 
 
         if (idx_age >= 0 && (size_t)idx_age < parts.size() && parts[idx_age].size()) {
             p.age = atoi(parts[idx_age].c_str());
@@ -136,6 +149,7 @@ bool load_users_encoded(const string& users_encoded_csv,
             }
         }
 
+        p.token_cols.clear();
         p.token_cols.resize(text_columns.size());
         for (size_t t = 0; t < text_columns.size(); ++t) {
             int idx = idx_token_cols[t];
