@@ -73,52 +73,47 @@ int main(int argc, char** argv) {
             enc.pass2(profiles, users_encoded);
             cout << "[main] users encoded and saved to " << users_encoded << "\n";
         } else {
-            cout << "[main] encoded users loaded from " << users_encoded << "\n";
+            cout << "[main] encoded users found in " << users_encoded << "\n";
         }
     }
 
     unordered_map<int, UserProfile> profiles_map;
-    int median_age = 0;
-    bool ok = load_users_encoded(users_encoded, textCols, profiles_map, median_age);
+    bool ok = load_users_encoded(users_encoded, textCols, profiles_map);
     if (! ok) {
         cout << "[main] cannot load users_encoded.csv\n";
         return 1;
     }
-    cout << "[main] loaded profiles: " << profiles_map.size() << " median_age=" << median_age << "\n";
+    cout << "[main] loaded profiles: " << profiles_map.size() << "\n";
 
-    const string norms_path = DATA_DIR + "/column_normalizers.csv";
-    vector<float> col_norms;
-    bool loaded_norms = false;
-    {
-        ifstream nf(norms_path);
-        if (nf.is_open()) {
-            nf.close();
-            if (load_column_normalizers_csv(norms_path, textCols, col_norms)) {
-                cout << "[main] loaded column normalizers from " << norms_path << "\n";
-                loaded_norms = true;
-            } else {
-                cout << "[main] failed to load " << norms_path << ", will compute\n";
-            }
+    const string median_path = DATA_DIR + "/median_age.txt";
+    int median_age = 0;
+    if (load_median_age(median_path, median_age)) {
+        cout << "[main] loaded median_age=" << median_age << " from " << median_path << "\n";
+    } else {
+        cout << "[main] median not found, computing median from profiles\n";
+        median_age = compute_median_age_from_profiles(profiles_map);
+        if (median_age > 0) {
+            save_median_age(median_path, median_age);
+            cout << "[main] computed median_age=" << median_age << " and saved to " << median_path << "\n";
         } else {
-            cout << "[main] no existing column normalizers file found at " << norms_path << "\n";
+            cout << "[main] computed median_age=0\n";
         }
     }
 
-    if (!loaded_norms) {
-        cout << "[main] computing column normalizers (sample_size=100000, comps_per_user=2)\n";
-        col_norms = compute_column_mean_similarities(profiles_map, textCols, 10000, 2);
-        ofstream nout(norms_path);
-        if (nout.is_open()) {
-            nout << "column,mean_sim\n";
-            for (size_t i = 0; i < textCols.size(); ++i) {
-                float v = (i < col_norms.size() ? col_norms[i] : 0.0f);
-                nout << textCols[i] << "," << v << "\n";
-            }
-            nout.close();
-            cout << "[main] saved column normalizers to " << norms_path << "\n";
-        } else {
+    int replaced = fill_missing_ages(profiles_map, median_age);
+    cout << "[main] replaced " << replaced << " zero-ages with median_age=" << median_age << "\n";
+
+    const string norms_path = DATA_DIR + "/column_normalizers.csv";
+    unordered_map<string, pair<float,float>> col_norms_map;
+    if (load_column_normalizers(norms_path, col_norms_map)) {
+        cout << "[main] loaded column normalizers from " << norms_path << " (" << col_norms_map.size() << " entries)\n";
+    } else {
+        cout << "[main] column_normalizers.csv not found or invalid, computing normalizers (sample_size=100000, comps_per_user=5)\n";
+        col_norms_map = compute_column_normalizers(profiles_map, textCols, 100000, 5);
+        if (save_column_normalizers(norms_path, col_norms_map))
+            cout << "[main] saved column normalizers to " << norms_path << " (" << col_norms_map.size() << " entries)\n";
+        else
             cout << "[main] cannot save column normalizers to " << norms_path << "\n";
-        }
     }
 
     DataExplorer de;
@@ -138,7 +133,7 @@ int main(int argc, char** argv) {
     cout << "[main] HierCoarsener done\n";
 
     Recommender rec_profiles(&profiles_map, &adj_list);
-    rec_profiles.set_column_normalizers(col_norms);
+    rec_profiles.set_field_normalizers(col_norms_map);
 
     int test_uid = df.size() ? atoi(df[0][0].c_str()) : (profiles_map.begin() != profiles_map.end() ? profiles_map.begin()->first : 1);
 

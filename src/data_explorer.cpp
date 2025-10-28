@@ -9,7 +9,6 @@
 
 #ifdef USE_MATPLOT
 #include <matplot/matplot.h>
-using namespace matplot;
 #endif
 
 using namespace std;
@@ -61,7 +60,7 @@ struct HeaderIdx {
     int gender = -1;
     int region_id = -1;
     int age = -1;
-    vector<int> text_token_indices; // aligned with provided text_columns
+    vector<int> text_token_indices;
 };
 
 static HeaderIdx parse_header(const vector<string>& header_cols, const vector<string>& text_columns)
@@ -132,12 +131,12 @@ static void plot_histogram_matplot(const vector<int>& data, const string& stitle
     vector<double> vec;
     vec.reserve(data.size());
     for (int v : data) vec.push_back((double)v);
-    figure();
-    hist(vec);
-    title(stitle);
-    xlabel(sxlabel);
-    ylabel("count");
-    save(outpath);
+    matplot::figure();
+    matplot::hist(vec);
+    matplot::title(stitle);
+    matplot::xlabel(sxlabel);
+    matplot::ylabel("count");
+    matplot::save(outpath);
 }
 
 static void plot_bar_counts_matplot(const vector<pair<string,int>>& items, const string& stitle, const string& outpath)
@@ -146,10 +145,10 @@ static void plot_bar_counts_matplot(const vector<pair<string,int>>& items, const
     vector<string> labels;
     vector<double> values;
     for (const auto &p : items) { labels.push_back(p.first); values.push_back((double)p.second); }
-    figure();
-    bar(values);
-    title(stitle);
-    save(outpath);
+    matplot::figure();
+    matplot::bar(values);
+    matplot::title(stitle);
+    matplot::save(outpath);
 }
 #endif
 
@@ -168,7 +167,6 @@ void DataExplorer::analyze_users_encoded(const string& users_encoded_csv,
     vector<string> header_cols = split_csv_line(header);
     HeaderIdx hi = parse_header(header_cols, text_columns);
 
-    unordered_map<int, vector<string>> rows;
     string line;
 
     vector<int> ages_nonzero;
@@ -245,17 +243,16 @@ void DataExplorer::analyze_users_encoded(const string& users_encoded_csv,
                      public_1, public_0,
                      total_edges);
 
-    // write CSVs
     {
-        ofstream out_deg_csv(out_prefix + "_degree_hist.csv");
+        ofstream out_deg_csv(out_prefix + "/degree_hist.csv");
         for (size_t i = 0; i < degs.size(); ++i) out_deg_csv << degs[i] << "\n";
     }
     {
-        ofstream out_age_csv(out_prefix + "_ages.csv");
+        ofstream out_age_csv(out_prefix + "/ages.csv");
         for (size_t i = 0; i < ages_nonzero.size(); ++i) out_age_csv << ages_nonzero[i] << "\n";
     }
     {
-        ofstream out_addr_csv(out_prefix + "_addr_counts.csv");
+        ofstream out_addr_csv(out_prefix + "/addr_counts.csv");
         vector<pair<int,int>> addr_vec;
         addr_vec.reserve(addr_count.size());
         for (auto &p : addr_count) addr_vec.push_back(p);
@@ -263,12 +260,12 @@ void DataExplorer::analyze_users_encoded(const string& users_encoded_csv,
         for (auto &p : addr_vec) out_addr_csv << p.first << "," << p.second << "\n";
     }
     {
-        ofstream out_nulls(out_prefix + "_nulls_per_textcol.csv");
+        ofstream out_nulls(out_prefix + "/nulls_per_textcol.csv");
         for (size_t i = 0; i < text_columns.size(); ++i)
             out_nulls << text_columns[i] << "," << null_counts[i] << "\n";
     }
     {
-        ofstream out_gender_public(out_prefix + "_gender_public.csv");
+        ofstream out_gender_public(out_prefix + "/gender_public.csv");
         out_gender_public << "gender_1," << gender_1 << "\n";
         out_gender_public << "gender_0," << gender_0 << "\n";
         out_gender_public << "public_1," << public_1 << "\n";
@@ -276,7 +273,6 @@ void DataExplorer::analyze_users_encoded(const string& users_encoded_csv,
     }
 
 #ifdef USE_MATPLOT
-    // plots (only if matplot available)
     try {
         vector<pair<string,int>> top_addrs;
         {
@@ -289,21 +285,14 @@ void DataExplorer::analyze_users_encoded(const string& users_encoded_csv,
         }
         plot_histogram_matplot(degs, "Degree distribution", "degree", out_prefix + "/degree_hist.png");
         plot_histogram_matplot(vector<int>(ages_nonzero.begin(), ages_nonzero.end()), "Age distribution (non-zero)", "age", out_prefix + "/age_hist.png");
-
         plot_bar_counts_matplot(top_addrs, "Top addresses (by id)", out_prefix + "/top_addresses.png");
-
         vector<pair<string,int>> null_items;
         for (size_t i = 0; i < text_columns.size(); ++i) null_items.push_back(make_pair(text_columns[i], null_counts[i]));
         sort(null_items.begin(), null_items.end(), [](const pair<string,int>& A, const pair<string,int>& B){ return A.second > B.second; });
         if (null_items.size() > 40) null_items.resize(40);
         plot_bar_counts_matplot(null_items, "Nulls per text column (top 40)", out_prefix + "/nulls_per_textcol.png");
-
         vector<pair<string,int>> gp = { {"gender_1", gender_1}, {"gender_0", gender_0}, {"public_1", public_1}, {"public_0", public_0} };
         plot_bar_counts_matplot(gp, "Gender / Public distribution", out_prefix + "/gender_public.png");
-    } catch (...) {
-        // plotting failures are non-fatal
-    }
+    } catch (...) {}
 #endif
-
-    // Done.
 }

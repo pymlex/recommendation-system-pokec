@@ -1,24 +1,17 @@
 #include "user_profile.h"
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include <algorithm>
 #include <cctype>
 
 using namespace std;
 
-static string lower_copy(const string& s) {
-    string r = s;
-    for (size_t i = 0; i < r.size(); ++i) {
-        unsigned char c = (unsigned char) r[i];
-        if (c >= 'A' && c <= 'Z') r[i] = (char)(c + ('a' - 'A'));
-    }
-    return r;
-}
-
 static vector<string> split_csv_line(const string& line) {
     vector<string> out;
     string cur;
     bool in_quote = false;
+    out.reserve(128);
     for (size_t i = 0; i < line.size(); ++i) {
         char c = line[i];
         if (c == '"') { in_quote = !in_quote; continue; }
@@ -51,11 +44,9 @@ static vector<pair<int,int>> parse_tok_field(const string& s) {
 
 bool load_users_encoded(const string& users_encoded_csv,
                         const vector<string>& text_columns,
-                        unordered_map<int, UserProfile>& out_profiles,
-                        int& out_median_age)
+                        unordered_map<int, UserProfile>& out_profiles)
 {
     out_profiles.clear();
-    out_median_age = 0;
 
     ifstream in(users_encoded_csv);
     if (! in.is_open()) return false;
@@ -63,90 +54,76 @@ bool load_users_encoded(const string& users_encoded_csv,
     string header;
     if (! getline(in, header)) return false;
 
-    vector<string> headers = split_csv_line(header);
-    vector<string> headers_l;
-    headers_l.reserve(headers.size());
-    for (auto &h : headers) headers_l.push_back(lower_copy(h));
+    int idx_user = 0;
+    int idx_public = 1;
+    int idx_completion = 2;
+    int idx_gender = 3;
+    int idx_region = 4;
+    int idx_age = 5;
+    int idx_clubs = 6;
+    int idx_friends = 7;
 
-    int idx_user = -1, idx_public = -1, idx_gender = -1, idx_region = -1, idx_age = -1, idx_clubs = -1, idx_friends = -1;
-    vector<int> idx_token_cols; idx_token_cols.resize(text_columns.size(), -1);
-
-    for (size_t i = 0; i < headers_l.size(); ++i) {
-        const string &h = headers_l[i];
-        if (h == "user_id" || h == "userid") idx_user = (int)i;
-        else if (h == "public" || h == "public_flag") idx_public = (int)i;
-        else if (h == "gender") idx_gender = (int)i;
-        else if (h == "region_id" || h == "region") idx_region = (int)i;
-        else if (h == "age" || h == "a g e") idx_age = (int)i;
-        else if (h == "clubs") idx_clubs = (int)i;
-        else if (h == "friends") idx_friends = (int)i;
-    }
-
-    for (size_t t = 0; t < text_columns.size(); ++t) {
-        string key = lower_copy(text_columns[t]) + "_tokens";
-        for (size_t i = 0; i < headers_l.size(); ++i) if (headers_l[i] == key) { idx_token_cols[t] = (int)i; break; }
-    }
+    vector<int> idx_token_cols(text_columns.size(), -1);
+    for (size_t t = 0; t < text_columns.size(); ++t) idx_token_cols[t] = (int)(8 + t);
 
     string line;
-    vector<int> ages_nonzero;
-    while (getline(in, line)) {
+    int c = 0;
+    while (getline(in, line) && c < 300000) {
+        if (!(c % 10000)) {
+            cout << "Loaded " << c << " users " << endl;
+        }
+        c++;
+
         if (line.empty()) continue;
         vector<string> parts = split_csv_line(line);
         if (parts.size() == 0) continue;
 
+        int uid = atoi(parts[idx_user].c_str());
+        if (uid == 0) continue;
+
         UserProfile p;
-        if (idx_user >= 0 && (size_t)idx_user < parts.size() && parts[idx_user].size()) {
-            p.user_id = atoi(parts[idx_user].c_str());
-        } else continue; 
+        p.user_id = uid;
 
-        if (idx_public >= 0 && (size_t)idx_public < parts.size() && parts[idx_public].size()) {
+        if (idx_public >= 0 && (size_t)idx_public < parts.size() && parts[idx_public].size())
             p.public_flag = atoi(parts[idx_public].c_str());
-        } else p.public_flag = -1;
+        else p.public_flag = -1;
 
-        if (idx_gender >= 0 && (size_t)idx_gender < parts.size() && parts[idx_gender].size()) {
-            p.gender = parts[idx_gender];
-        } else p.gender.clear();
+        if (idx_completion >= 0 && (size_t)idx_completion < parts.size() && parts[idx_completion].size())
+            p.completion_percentage = atoi(parts[idx_completion].c_str());
+        else p.completion_percentage = -1;
 
-        // region_parts: parse "p1;p2;p3" (ids or empty)
+        if (idx_gender >= 0 && (size_t)idx_gender < parts.size() && parts[idx_gender].size())
+            p.gender = atoi(parts[idx_gender].c_str());
+        else p.gender = -1;
+
+        if (idx_age >= 0 && (size_t)idx_age < parts.size() && parts[idx_age].size()) {
+            p.age = atoi(parts[idx_age].c_str());
+        } else p.age = 0;
+
+        if (idx_clubs >= 0 && (size_t)idx_clubs < parts.size() && parts[idx_clubs].size()) {
+            stringstream sc(parts[idx_clubs]);
+            string tok;
+            while (getline(sc, tok, ';')) if (!tok.empty()) p.clubs.push_back((uint32_t)atoi(tok.c_str()));
+        }
+
+        if (idx_friends >= 0 && (size_t)idx_friends < parts.size() && parts[idx_friends].size()) {
+            stringstream sf(parts[idx_friends]);
+            string tok;
+            while (getline(sf, tok, ';')) if (!tok.empty()) p.friends.push_back((uint32_t)atoi(tok.c_str()));
+        }
+
         p.region_parts = { -1, -1, -1 };
         if (idx_region >= 0 && (size_t)idx_region < parts.size() && parts[idx_region].size()) {
             string rf = parts[idx_region];
             if (rf.size() >= 2 && rf.front() == '"' && rf.back() == '"') rf = rf.substr(1, rf.size()-2);
             stringstream rs(rf);
             string tok;
-            int part_idx = 0;
-            while (getline(rs, tok, ';') && part_idx < 3) {
-                if (!tok.empty()) {
-                    p.region_parts[part_idx] = atoi(tok.c_str());
-                } else {
-                    p.region_parts[part_idx] = -1;
-                }
-                ++part_idx;
+            int pi = 0;
+            while (getline(rs, tok, ';') && pi < 3) {
+                if (!tok.empty()) p.region_parts[pi] = atoi(tok.c_str());
+                ++pi;
             }
-            for (; part_idx < 3; ++part_idx) p.region_parts[part_idx] = -1;
-        } 
-
-        if (idx_age >= 0 && (size_t)idx_age < parts.size() && parts[idx_age].size()) {
-            p.age = atoi(parts[idx_age].c_str());
-        } else p.age = 0;
-        if (p.age > 0) ages_nonzero.push_back(p.age);
-
-        if (idx_clubs >= 0 && (size_t)idx_clubs < parts.size() && parts[idx_clubs].size()) {
-            string clubs_field = parts[idx_clubs];
-            stringstream sc(clubs_field);
-            string tok;
-            while (getline(sc, tok, ';')) {
-                if (tok.size()) p.clubs.push_back(atoi(tok.c_str()));
-            }
-        }
-
-        if (idx_friends >= 0 && (size_t)idx_friends < parts.size() && parts[idx_friends].size()) {
-            string friends_field = parts[idx_friends];
-            stringstream sf(friends_field);
-            string tok;
-            while (getline(sf, tok, ';')) {
-                if (tok.size()) p.friends.push_back(atoi(tok.c_str()));
-            }
+            for (; pi < 3; ++pi) p.region_parts[pi] = -1;
         }
 
         p.token_cols.clear();
@@ -163,19 +140,5 @@ bool load_users_encoded(const string& users_encoded_csv,
     }
 
     in.close();
-
-    if (ages_nonzero.empty()) out_median_age = 0;
-    else {
-        sort(ages_nonzero.begin(), ages_nonzero.end());
-        size_t n = ages_nonzero.size();
-        if (n % 2) out_median_age = ages_nonzero[n/2];
-        else out_median_age = (ages_nonzero[n/2 - 1] + ages_nonzero[n/2]) / 2;
-    }
-
-    // replace zeros with median
-    for (auto &kv : out_profiles) {
-        if (kv.second.age == 0) kv.second.age = out_median_age;
-    }
-
     return true;
 }

@@ -14,8 +14,8 @@ add_executable(kurs ${SRC_FILES})
 
 # If user enabled plotting and the library is present, add it.
 if (USE_MATPLOT)
-  if (EXISTS "${CMAKE_SOURCE_DIR}/matplotplusplus/CMakeLists.txt")
-    add_subdirectory(${CMAKE_SOURCE_DIR}/matplotplusplus EXCLUDE_FROM_ALL)
+  if (EXISTS "${CMAKE_SOURCE_DIR}/third_party/matplotplusplus/CMakeLists.txt")
+    add_subdirectory(${CMAKE_SOURCE_DIR}/third_party/matplotplusplus EXCLUDE_FROM_ALL)
     target_link_libraries(kurs PUBLIC matplot)
     # Make preprocessor symbol visible to sources
     target_compile_definitions(kurs PRIVATE USE_MATPLOT=1)

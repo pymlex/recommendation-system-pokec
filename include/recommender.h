@@ -21,13 +21,16 @@ struct Recommender {
 
     float profile_similarity(const UserProfile &A, const UserProfile &B, const vector<string> &text_columns) const;
 
-    void set_column_normalizers(const vector<float>& norms);
+    void set_column_normalizers(const vector<pair<float,float>>& norms);
+    void set_field_normalizers(const unordered_map<string, pair<float,float>>& m);
 
     unordered_map<int, unordered_map<int,float>>* user_feats = nullptr;
     unordered_map<int, vector<int>>* adj_list = nullptr;
+
     unordered_map<int, UserProfile>* profiles = nullptr;
 
-    vector<float> column_normalizers;
+    vector<pair<float,float>> column_normalizers;
+    unordered_map<string, pair<float,float>> field_normalizers;
 };
 
 #endif
