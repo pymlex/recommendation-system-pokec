@@ -12,8 +12,8 @@
 #include "column_stats.h"
 #include "tfidf_index.h"
 #include "evaluator.h"
+#include "recommendation_tests.h"
 #include <user_loader.h>
-#include "eval.h"
 
 #include <iostream>
 #include <vector>
@@ -80,7 +80,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    
     unordered_map<int, UserProfile> profiles_map;
     bool ok = load_users_encoded(users_encoded, textCols, profiles_map);
     if (! ok) {
@@ -120,13 +119,6 @@ int main(int argc, char** argv) {
             cout << "[main] cannot save column normalizers to " << norms_path << "\n";
     }
 
-    /*
-    DataExplorer de;
-    cout << "[main] running DataExplorer\n";
-    de.analyze_users_encoded(users_encoded, adjacency_csv, textCols, "data/explore");
-    */
-
-    HierCoarsener hc(100, 0.5f);
     cout << "[main] HierCoarsener created (not used for non-coarsened run)\n";
 
     Recommender rec(&profiles_map, &adj_list);
@@ -134,21 +126,24 @@ int main(int argc, char** argv) {
     rec.set_column_normalizers(col_norms_map);
 
     rec.compute_idf_from_profiles(textCols);
+    rec.set_text_columns(textCols);
     cout << "[main] Recommender ready with precomputed idf for " << textCols.size() << " text columns\n";
 
-    int test_uid = profiles_map.begin() != profiles_map.end() ? profiles_map.begin()->first : 1;
-    cout << "Top profile-based (graph-registration) recommendations for user " << test_uid << ":\n";
-    auto r = rec.recommend_graph_registration(test_uid, 10);
-    for (size_t i = 0; i < r.size(); ++i)
-        cout << "User " << r[i].first << " score=" << r[i].second << "\n";
-
-    {
-        cout << "[main] running evaluation sample tests (sample_size=10000, k=10)\n";
-        Recommender rec_for_eval = rec; // copy small; fields are shallow maps
-        EvalResult er = evaluate_recommender_sample(profiles_map, adj_list, rec_for_eval, textCols, 10000, 10);
-        cout << "[main] EVAL (graph-registration) hit@10=" << er.hit_at_k
-             << " prec@10=" << er.precision_at_k << " rec@10=" << er.recall_at_k << "\n";
+    unordered_map<int,string> club_id_to_name;
+    for (auto &kv : vb.club_to_id) {
+        club_id_to_name[kv.second] = kv.first;
     }
+
+    print_example_recommendations(profiles_map, adj_list, rec, club_id_to_name, textCols);
+
+    cout << "[main] Running recommendation tests (sample_size=1000, topk=10)\n";
+    RecommendTestMetrics mt = run_recommendation_tests_sample(profiles_map, adj_list, club_id_to_name, rec, textCols, 100, 10);
+    cout << "[main] TEST RESULTS:\n";
+    cout << "  graph_hit_rate = " << mt.graph_hit_rate << "\n";
+    cout << "  collab_hit_rate = " << mt.collab_hit_rate << "\n";
+    cout << "  interest_hit_rate = " << mt.interest_hit_rate << "\n";
+    cout << "  club_prec@10 (avg among users with clubs) = " << mt.avg_club_prec_at_k << "\n";
+    cout << "  club_rec@10  (avg among users with clubs) = " << mt.avg_club_recall_at_k << "\n";
 
     return 0;
 }
