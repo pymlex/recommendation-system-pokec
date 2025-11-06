@@ -30,7 +30,7 @@ bool load_users_encoded(const string& users_encoded_csv,
     
     string line;
     int c = 0;
-    while (getline(in, line) && c < 200000) {
+    while (getline(in, line) && c < 100000) {
         if (!(c % 10000)) {
             cout << "Loaded " << c << " users " << endl;
         }

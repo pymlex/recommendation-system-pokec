@@ -50,7 +50,7 @@ EvalMetrics evaluate_recommenders_holdout(const unordered_map<int, UserProfile>&
 
         Recommender rec((unordered_map<int, UserProfile>*)&profiles, &adj_mod);
         rec.set_text_columns(text_columns);
-        rec.set_tfidf_index(&tfidf);
+        rec.set_tfidf_index(tfidf.idf_per_col);
 
         auto out_g = rec.recommend_friends_graph(uid, topk, 5000);
         bool hitg = false;
@@ -80,7 +80,7 @@ EvalMetrics evaluate_recommenders_holdout(const unordered_map<int, UserProfile>&
             }
             Recommender rec_t(&temp_user_tfidf, &adj_mod);
             rec_t.set_text_columns(text_columns);
-            rec_t.set_tfidf_index(&tmp_tfidf);
+            rec_t.set_tfidf_index(tmp_tfidf.idf_per_col);
             auto out_s = rec_t.recommend_from_supernodes(uid, *super_feats, topk);
             bool hits = false;
             for (auto &p : out_s) if (held.find(p.first) != held.end()) { hits = true; break; }
