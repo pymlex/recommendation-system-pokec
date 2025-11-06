@@ -1,37 +1,24 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <unordered_map>
-#include <vector>
 #include <string>
-#include <utility>
+#include <vector>
+#include <unordered_map>
 
+std::vector<std::string> load_text_columns_from_file(const std::string& path);
 
-using namespace std;
+std::unordered_map<int, std::vector<int>> build_adj_list(const std::unordered_map<int, std::vector<std::pair<int,float>>>& adj_weighted);
 
+bool load_column_normalizers(const std::string& path, std::unordered_map<std::string, std::pair<float,float>>& out);
+bool save_column_normalizers(const std::string& path, const std::unordered_map<std::string, std::pair<float,float>>& m);
 
-struct UserProfile;
+std::unordered_map<std::string, std::pair<float,float>> compute_column_normalizers(
+    const std::unordered_map<int, struct UserProfile>& profiles,
+    const std::vector<std::string>& text_columns,
+    int sample_size,
+    int comps_per_user);
 
-
-unordered_map<int, vector<int>> build_adj_list(const unordered_map<int, vector<pair<int,float>>>& adj_weighted);
-float evaluate_holdout_hit_at_k(const unordered_map<int, vector<int>>& adj_list,
-                                const unordered_map<int, unordered_map<int,float>>& feats,
-                                int sample_size, int k);
-vector<string> load_text_columns_from_file(const string& path);
-
-bool load_median_age(const string& path, int& out_median);
-bool save_median_age(const string& path, int median);
-int compute_median_age_from_profiles(const unordered_map<int, UserProfile>& profiles);
-int fill_missing_ages(unordered_map<int, UserProfile>& profiles, int median_age);
-
-unordered_map<string, pair<float,float>> compute_column_normalizers(
-    const unordered_map<int, UserProfile>& profiles,
-    const vector<string>& text_columns,
-    size_t sample_users,
-    int comps_per_user
-);
-
-bool load_column_normalizers(const string& path, unordered_map<string, pair<float,float>>& out);
-bool save_column_normalizers(const string& path, const unordered_map<string, pair<float,float>>& in);
+std::vector<std::string> split_csv_line(const std::string& line);
+std::vector<std::pair<int,int>> parse_tok_field(const std::string& field);
 
 #endif

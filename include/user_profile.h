@@ -5,8 +5,7 @@
 #include <vector>
 #include <unordered_map>
 #include <array>
-
-using namespace std;
+#include <cstdint>
 
 struct UserProfile {
     int user_id = -1;
@@ -14,14 +13,10 @@ struct UserProfile {
     int completion_percentage = -1;
     int gender = -1;
     int age = 0;
-    vector<uint32_t> clubs;
-    vector<uint32_t> friends;
-    vector< unordered_map<int,int> > token_cols;
-    array<int,3> region_parts = { -1, -1, -1 };
+    std::vector<uint32_t> clubs;
+    std::vector<uint32_t> friends;
+    std::vector< std::unordered_map<int,int> > token_cols;
+    std::array<int,3> region_parts = { -1, -1, -1 };
 };
-
-bool load_users_encoded(const string& users_encoded_csv,
-                        const vector<string>& text_columns,
-                        unordered_map<int, UserProfile>& out_profiles);
 
 #endif

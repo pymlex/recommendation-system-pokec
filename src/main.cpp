@@ -3,7 +3,6 @@
 #include "vocab_builder.h"
 #include "encoder.h"
 #include "preprocess.h"
-#include "feature_extractor.h"
 #include "graph_builder.h"
 #include "hiercoarsener.h"
 #include "recommender.h"
@@ -11,6 +10,9 @@
 #include "user_profile.h"
 #include "data_explorer.h"
 #include "column_stats.h"
+#include "tfidf_index.h"
+#include "evaluator.h"
+#include <user_loader.h>
 
 #include <iostream>
 #include <vector>
@@ -116,40 +118,68 @@ int main(int argc, char** argv) {
             cout << "[main] cannot save column normalizers to " << norms_path << "\n";
     }
 
+    /*
     DataExplorer de;
     cout << "[main] running DataExplorer\n";
     de.analyze_users_encoded(users_encoded, adjacency_csv, textCols, "data/explore");
+    */
 
-    FeatureExtractor fe;
-    cout << "[main] running FeatureExtractor\n";
-    vector<vector<string>> df = preprocess_profiles(profiles, tok, 10000);
-    fe.build_from_df(df);
-    cout << "[main] FeatureExtractor ready\n";
+    // ---------- TF-IDF: build index and per-user tfidf maps ----------
+    TFIDFIndex tfidf;
+    cout << "[main] building TFIDF index from profiles\n";
+    tfidf.build(profiles_map, textCols);
 
+    unordered_map<int, unordered_map<int,float>> user_tfidf;
+    user_tfidf.reserve(profiles_map.size());
+    for (auto &kv : profiles_map) {
+        unordered_map<int,float> vec;
+        tfidf.compute_tfidf_vector(kv.second, vec);
+        if (!vec.empty()) user_tfidf[kv.first] = std::move(vec);
+    }
+    cout << "[main] built user_tfidf vectors for " << user_tfidf.size() << " users\n";
+
+    // ---------- Hierarchical coarsening (supernodes) using tfidf vectors ----------
     HierCoarsener hc(100, 0.5f);
-    cout << "[main] running HierCoarsener\n";
-    unordered_map<int, unordered_map<int,float>> tfidf_copy = fe.user_tfidf;
+    cout << "[main] running HierCoarsener (producing supernodes)\n";
+    unordered_map<int, unordered_map<int,float>> tfidf_copy = user_tfidf;
     hc.coarsen(tfidf_copy, adj_list, 1);
-    cout << "[main] HierCoarsener done\n";
+    cout << "[main] HierCoarsener done: super_features size=" << hc.super_features.size() << "\n";
 
+    // Recommenders
     Recommender rec_profiles(&profiles_map, &adj_list);
     rec_profiles.set_field_normalizers(col_norms_map);
+    rec_profiles.set_text_columns(textCols);
+    rec_profiles.set_tfidf_index(&tfidf);
 
-    int test_uid = df.size() ? atoi(df[0][0].c_str()) : (profiles_map.begin() != profiles_map.end() ? profiles_map.begin()->first : 1);
+    Recommender rec_tfidf(&user_tfidf, &adj_list);
+    rec_tfidf.set_text_columns(textCols);
+    rec_tfidf.set_tfidf_index(&tfidf);
+
+    // pick test user
+    int test_uid = profiles_map.begin() != profiles_map.end() ? profiles_map.begin()->first : 1;
 
     cout << "Top profile-based recommendations for user " << test_uid << ":\n";
     vector<pair<int,float>> r = rec_profiles.recommend_by_profile(test_uid, 10);
     for (size_t i = 0; i < r.size(); ++i)
         cout << "User " << r[i].first << " score=" << r[i].second << "\n";
 
-    Recommender rec_tfidf(&fe.user_tfidf, &adj_list);
-    float hit = evaluate_holdout_hit_at_k(adj_list, fe.user_tfidf, 200, 10);
-    cout << "Holdout hit@10 sample=200 -> " << hit << "\n";
+    cout << "Top TFIDF/cosine-based recommendations for user " << test_uid << ":\n";
+    vector<pair<int,float>> r2 = rec_tfidf.recommend_by_cosine(test_uid, 10);
+    for (size_t i = 0; i < r2.size(); ++i)
+        cout << "User " << r2[i].first << " score=" << r2[i].second << "\n";
 
-    cout << "Top supernodes for user " << test_uid << ":\n";
-    vector<pair<int,float>> sr = rec_tfidf.recommend_from_supernodes(test_uid, hc.super_features, 5);
+    cout << "Top supernode-based recommendations for user " << test_uid << ":\n";
+    vector<pair<int,float>> sr = rec_tfidf.recommend_from_supernodes(test_uid, hc.super_features, 10);
     for (size_t i = 0; i < sr.size(); ++i)
         cout << "Supernode " << sr[i].first << " score=" << sr[i].second << "\n";
+
+    // ---------- Evaluation (holdout) ----------
+    cout << "[main] running holdout evaluation (sample=200, topk=10) including supernodes\n";
+    EvalMetrics metrics = evaluate_recommenders_holdout(profiles_map, adj_list, textCols, 200, 10, &hc.super_features);
+    cout << "[main] holdout results: graph_hit=" << metrics.graph_hit
+         << " collab_hit=" << metrics.collab_hit
+         << " interest_hit=" << metrics.interest_hit
+         << " supernode_hit=" << metrics.supernode_hit << "\n";
 
     return 0;
 }
