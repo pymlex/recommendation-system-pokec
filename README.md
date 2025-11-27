@@ -1,6 +1,12 @@
 # Recommendation System — Pokec (C++)
 
-<img width="730" height="411" alt="fsdfas" src="https://github.com/user-attachments/assets/2afc8198-fdcd-4fc0-ad2b-5c9b65eace0c" />
+<img 
+    src="https://github.com/user-attachments/assets/2afc8198-fdcd-4fc0-ad2b-5c9b65eace0c" 
+    width="438" 
+    height="247" 
+    alt="fsdfas" 
+    style="display: block; margin: auto;" 
+/>
 
 ## Overview
 
