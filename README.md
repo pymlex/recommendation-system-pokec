@@ -1,5 +1,7 @@
 # Recommendation System — Pokec (C++)
 
+<img width="730" height="411" alt="fsdfas" src="https://github.com/user-attachments/assets/2afc8198-fdcd-4fc0-ad2b-5c9b65eace0c" />
+
 ## Overview
 
 A C++ heuristic recommendation system built for the Slovak social network **Pokec** (≈1.6M users).
