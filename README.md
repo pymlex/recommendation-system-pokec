@@ -176,9 +176,7 @@ FAS is the central similarity used by the system. It combines:
 3. **Fill factor F = (# of common non-empty fields) / (total possible fields)** where total possible fields = fixed fields (public, gender, completion, age, region, clubs, friends) + number_of_text_columns.
 4. **FAS formula**:
 
-   [
-   \text{FAS} = \frac{2 \cdot S \cdot F}{S + F}
-   ]
+$$\text{FAS} = \frac{2 \cdot S \cdot F}{S + F}$$
 
    * This harmonic-like combination ensures that similarity is high only if both the per-field similarity S is high *and* there is a substantial overlap in which fields are present (F). It penalizes high raw similarity computed on very few overlapping fields.
 
