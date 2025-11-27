@@ -1,7 +1,7 @@
 # Recommendation System — Pokec (C++)
 
 <img 
-    src="https://github.com/user-attachments/assets/2afc8198-fdcd-4fc0-ad2b-5c9b65eace0c" 
+    src="https://github.com/user-attachments/assets/26ba0279-87b5-44b6-8cb2-58eee46d3eaf" 
     width="438" 
     height="247" 
     alt="pokec" 
