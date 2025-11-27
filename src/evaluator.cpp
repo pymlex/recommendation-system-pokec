@@ -68,8 +68,6 @@ EvalMetrics evaluate_recommenders_holdout(const unordered_map<int, UserProfile>&
         if (hiti) ++hits_i;
 
         if (super_feats) {
-            // create a recommender using user_tfidf built on the fly
-            // Build temporary user_tfidf map for the recommender (only references needed in recommend_from_supernodes)
             unordered_map<int, unordered_map<int,float>> temp_user_tfidf;
             TFIDFIndex tmp_tfidf;
             tmp_tfidf.build(profiles, text_columns);

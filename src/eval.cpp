@@ -7,8 +7,6 @@
 
 using namespace std;
 
-// For "registration" scenario: we hide a fraction of true friends (e.g. 75% keep, 25% hidden) and test recovery.
-// For collaborative/interests we use similar holdout.
 EvalResult evaluate_recommender_sample(
     const unordered_map<int, UserProfile>& profiles,
     const unordered_map<int, vector<int>>& adj_list,
@@ -35,20 +33,15 @@ EvalResult evaluate_recommender_sample(
         auto itadj = adj_list.find(uid);
         if (itadj == adj_list.end()) continue;
         const vector<int>& friends = itadj->second;
-        if (friends.size() < 4) continue; // need some friends to hide/recover
-        // holdout: keep 75%, hide 25% randomly
+        if (friends.size() < 4) continue;
         vector<int> shuffled = friends;
         shuffle(shuffled.begin(), shuffled.end(), rng);
         size_t keep = max<size_t>(1, (shuffled.size() * 3) / 4);
         set<int> kept(shuffled.begin(), shuffled.begin() + keep);
         set<int> hidden(shuffled.begin() + keep, shuffled.end());
 
-        // prepare a recommender that uses original profiles and adj_list but in scoring we will pretend user has only 'kept' friends
-        // For speed we will call the same recommender but filter out existing friends using the real adj_list in main; to simulate partial friends we
-        // create temporary adj_list? Simpler: we ask rec.recommend_graph_registration(uid, k*2, candidate_limit) then compute how many of top-k are in hidden.
         auto recs = rec.recommend_graph_registration(uid, k*2, 10000);
 
-        // count how many recovered hidden within top k
         int found = 0;
         int considered = 0;
         for (size_t i = 0; i < recs.size() && considered < k; ++i) {

@@ -17,7 +17,6 @@ static vector<string> split_csv_line(const string& line)
     {
         char c = line[i];
         if (c == '"' ) {
-            // handle doubled quotes inside quoted field
             if (in_quote && i + 1 < line.size() && line[i+1] == '"') {
                 cur.push_back('"'); ++i; continue;
             }
@@ -64,7 +63,6 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
     string header;
     if (! getline(in, header)) return false;
 
-    // parse header to find indices
     vector<string> headers = split_csv_line(header);
     int idx_user = -1;
     int idx_public = -1;
@@ -91,7 +89,6 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
         else if (hl == "friends") idx_friends = (int)i;
     }
 
-    // try to find token columns by suffix "_tokens"
     for (size_t t = 0; t < headers.size(); ++t) {
         string hl = headers[t];
         for (char &c : hl) if (c >= 'A' && c <= 'Z') c = char(c + ('a' - 'A'));
@@ -102,7 +99,6 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
         }
     }
 
-    // fallback positioning if tokens not found
     if (idx_token_cols[0] == -1) {
         int start = 0;
         vector<int> candidates = {idx_user, idx_public, idx_gender, idx_region, idx_age, idx_clubs, idx_friends};
@@ -133,7 +129,6 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
         uint32_t gender = 0;
         if (idx_gender >= 0 && (size_t)idx_gender < cols.size() && cols[idx_gender].size()) gender = (uint32_t) atoi(cols[idx_gender].c_str());
 
-        // region: CSV has "p1;p2;p3" possibly quoted
         vector<uint32_t> region_parts;
         if (idx_region >= 0 && (size_t)idx_region < cols.size() && cols[idx_region].size()) {
             string rf = cols[idx_region];
@@ -151,7 +146,6 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
             age = (uint32_t) atoi(cols[idx_age].c_str());
         }
 
-        // clubs
         vector<uint32_t> clubs;
         if (idx_clubs >= 0 && (size_t)idx_clubs < cols.size() && cols[idx_clubs].size()) {
             string clubs_field = cols[idx_clubs];
@@ -163,26 +157,20 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
             }
         }
 
-        // write record to binary
         uint32_t start_offset = (uint32_t) offset;
 
-        // user_id
         bout.write(reinterpret_cast<const char*>(&user_id), sizeof(uint32_t));
         offset += sizeof(uint32_t);
 
-        // ispublic
         bout.write(reinterpret_cast<const char*>(&ispublic), sizeof(uint32_t));
         offset += sizeof(uint32_t);
 
-        // completion_percentage
         bout.write(reinterpret_cast<const char*>(&completion), sizeof(uint32_t));
         offset += sizeof(uint32_t);
 
-        // gender
         bout.write(reinterpret_cast<const char*>(&gender), sizeof(uint32_t));
         offset += sizeof(uint32_t);
 
-        // region: count + elements
         uint32_t region_count = (uint32_t) region_parts.size();
         bout.write(reinterpret_cast<const char*>(&region_count), sizeof(uint32_t));
         offset += sizeof(uint32_t);
@@ -191,17 +179,14 @@ bool csv_to_bin_index(const string& users_csv, const string& out_bin, const stri
             offset += sizeof(uint32_t);
         }
 
-        // age as uint32_t
         bout.write(reinterpret_cast<const char*>(&age), sizeof(uint32_t));
         offset += sizeof(uint32_t);
 
-        // clubs: count + elements
         uint32_t clubs_count = (uint32_t) clubs.size();
         bout.write(reinterpret_cast<const char*>(&clubs_count), sizeof(uint32_t));
         offset += sizeof(uint32_t);
         for (size_t i = 0; i < clubs.size(); ++i) { uint32_t cid = clubs[i]; bout.write(reinterpret_cast<const char*>(&cid), sizeof(uint32_t)); offset += sizeof(uint32_t); }
 
-        // token columns
         uint32_t cols_num = (uint32_t) num_token_cols;
         bout.write(reinterpret_cast<const char*>(&cols_num), sizeof(uint32_t));
         offset += sizeof(uint32_t);

@@ -26,17 +26,15 @@ void print_example_recommendations(const unordered_map<int, UserProfile>& profil
     }
     if (uid == -1) uid = profiles.begin()->first;
 
-    uid = 35967;
+    uid = 35967; //set id as an option in this function
 
     cout << "=== Example recommendations for user " << uid << " ===\n";
     const UserProfile &p = profiles.at(uid);
 
-    // friends
     cout << "Existing friends (" << p.friends.size() << "): ";
     for (size_t i = 0; i < p.friends.size() && i < 50; ++i) cout << p.friends[i] << (i+1<p.friends.size() ? "," : "");
     cout << "\n";
 
-    // non-empty properties
     cout << "Non-empty properties:\n";
     if (p.age > 0) cout << "  age=" << p.age << "\n";
     if (p.gender >= 0) cout << "  gender=" << p.gender << "\n";
@@ -48,12 +46,10 @@ void print_example_recommendations(const unordered_map<int, UserProfile>& profil
         }
     }
 
-    // friend recommendations (graph)
     cout << "\nTop friend recs (graph-registration):\n";
     auto friends_rec = rec.recommend_graph_registration(uid, 10);
     for (auto &pr : friends_rec) cout << "  user " << pr.first << " score=" << pr.second << "\n";
 
-    // club recommendations
     cout << "\nTop club recs (collaborative):\n";
     auto club_rec = rec.recommend_clubs_collab(uid, 20);
     for (auto &pr : club_rec) {
@@ -62,7 +58,6 @@ void print_example_recommendations(const unordered_map<int, UserProfile>& profil
         cout << "  club " << cid << " score=" << pr.second << " name=" << (it!=club_id_to_name.end() ? it->second : string("<name?>")) << "\n";
     }
 
-    // interest-based friend recs
     cout << "\nTop friend recs (by-interest):\n";
     auto interest_rec = rec.recommend_by_interest(uid, 10);
     for (auto &pr : interest_rec) cout << "  user " << pr.first << " score=" << pr.second << "\n";
@@ -105,8 +100,7 @@ RecommendTestMetrics run_recommendation_tests_sample(const unordered_map<int, Us
         auto itadj = adj_list.find(uid);
         if (itadj == adj_list.end()) continue;
         const auto &friends = itadj->second;
-        if (friends.size() < 4) continue; // need enough friends to holdout
-        // holdout ~1/4 of friends
+        if (friends.size() < 4) continue; 
         int hold_k = max(1, (int)friends.size() / 4);
         vector<int> idx(friends.size());
         for (size_t i = 0; i < friends.size(); ++i) idx[i] = (int)i;
@@ -114,41 +108,35 @@ RecommendTestMetrics run_recommendation_tests_sample(const unordered_map<int, Us
         unordered_set<int> held;
         for (int i = 0; i < hold_k; ++i) held.insert(friends[idx[i]]);
 
-        // create modified adj list for this user
         unordered_map<int, vector<int>> adj_mod = adj_list;
         vector<int> newf;
         for (int f : friends) if (held.find(f) == held.end()) newf.push_back(f);
         adj_mod[uid] = newf;
 
-        // build recommender instance pointing to adj_mod
         Recommender rec(&profiles, &adj_mod);
         rec.set_field_normalizers(base_rec.field_normalizers);
         rec.set_column_normalizers(base_rec.column_normalizers);
         rec.set_text_columns(text_columns);
         rec.set_tfidf_index(base_rec.idf_per_col);
 
-        // evaluate graph-registration
         auto out_g = rec.recommend_graph_registration(uid, topk, 5000);
         bool hitg = false;
         int found_g = 0;
         for (auto &p : out_g) if (held.find(p.first) != held.end()) { hitg = true; ++found_g; }
         if (hitg) ++hits_graph;
 
-        // collaborative friend rec
         auto out_c = rec.recommend_collaborative(uid, topk, 5000);
         bool hitc = false;
         int found_c = 0;
         for (auto &p : out_c) if (held.find(p.first) != held.end()) { hitc = true; ++found_c; }
         if (hitc) ++hits_collab;
 
-        // interest-based (same as graph for now)
         auto out_i = rec.recommend_by_interest(uid, topk, 5000);
         bool hiti = false;
         int found_i = 0;
         for (auto &p : out_i) if (held.find(p.first) != held.end()) { hiti = true; ++found_i; }
         if (hiti) ++hits_interest;
 
-        // club recommendations: compare predicted clubs with actual clubs (no holdout)
         auto club_pred = rec.recommend_clubs_collab(uid, topk, 5000);
         const UserProfile &up = profiles.at(uid);
         unordered_set<int> actual_clubs;

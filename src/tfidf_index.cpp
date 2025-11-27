@@ -17,13 +17,11 @@ void TFIDFIndex::build(const unordered_map<int, UserProfile>& profiles, const ve
             }
         }
     }
-    // build idf_per_col using same ordering of text_columns
     idf_per_col.clear();
     for (size_t t = 0; t < text_columns.size(); ++t) {
         const auto &dfmap = doc_freqs[t];
         unordered_map<int,float> m;
         for (auto &pr : dfmap) {
-            // idf: use smooth variant
             float idf = (float)log(1.0 + (double)N / (1.0 + (double)pr.second));
             m[pr.first] = idf;
         }

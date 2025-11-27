@@ -13,7 +13,8 @@
 #include "tfidf_index.h"
 #include "evaluator.h"
 #include "recommendation_tests.h"
-#include <user_loader.h>
+#include "user_loader.h"
+#include "ui.h"
 
 #include <iostream>
 #include <vector>
@@ -81,7 +82,14 @@ int main(int argc, char** argv) {
     }
 
     unordered_map<int, UserProfile> profiles_map;
-    bool ok = load_users_encoded(users_encoded, textCols, profiles_map);
+
+    cout << "How many users to load? (enter number, 0 = load all): ";
+    size_t to_load = 0;
+    if (!(cin >> to_load)) { cin.clear(); string tmp; getline(cin,tmp); to_load = 0; }
+
+    bool ok;
+    ok = load_users_encoded(users_encoded, textCols, profiles_map, to_load);
+
     if (! ok) {
         cout << "[main] cannot load users_encoded.csv\n";
         return 1;
@@ -124,7 +132,6 @@ int main(int argc, char** argv) {
     Recommender rec(&profiles_map, &adj_list);
     rec.set_field_normalizers(col_norms_map);
     rec.set_column_normalizers(col_norms_map);
-
     rec.compute_idf_from_profiles(textCols);
     rec.set_text_columns(textCols);
     cout << "[main] Recommender ready with precomputed idf for " << textCols.size() << " text columns\n";
@@ -134,16 +141,7 @@ int main(int argc, char** argv) {
         club_id_to_name[kv.second] = kv.first;
     }
 
-    print_example_recommendations(profiles_map, adj_list, rec, club_id_to_name, textCols);
-
-    cout << "[main] Running recommendation tests (sample_size=1000, topk=10)\n";
-    RecommendTestMetrics mt = run_recommendation_tests_sample(profiles_map, adj_list, club_id_to_name, rec, textCols, 100, 10);
-    cout << "[main] TEST RESULTS:\n";
-    cout << "  graph_hit_rate = " << mt.graph_hit_rate << "\n";
-    cout << "  collab_hit_rate = " << mt.collab_hit_rate << "\n";
-    cout << "  interest_hit_rate = " << mt.interest_hit_rate << "\n";
-    cout << "  club_prec@10 (avg among users with clubs) = " << mt.avg_club_prec_at_k << "\n";
-    cout << "  club_rec@10  (avg among users with clubs) = " << mt.avg_club_recall_at_k << "\n";
+    run_terminal_ui(profiles_map, adj_list, rec, club_id_to_name, textCols, profiles_map.size());
 
     return 0;
 }

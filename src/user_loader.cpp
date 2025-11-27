@@ -9,7 +9,8 @@ using namespace std;
 
 bool load_users_encoded(const string& users_encoded_csv,
                         const vector<string>& text_columns,
-                        unordered_map<int, UserProfile>& out_profiles)
+                        unordered_map<int, UserProfile>& out_profiles,
+                        size_t max_users)
 {
     out_profiles.clear();
     ifstream in(users_encoded_csv);
@@ -90,6 +91,7 @@ bool load_users_encoded(const string& users_encoded_csv,
         out_profiles[p.user_id] = std::move(p);
     }
     in.close();
+    cout << "Loaded " << out_profiles.size() << " users total" << endl;
     return true;
 }
 
