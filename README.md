@@ -258,7 +258,7 @@ cd recommendation-system-pokec
 
 3. **Prepare data**
 
-   * Put the Pokec dataset files into `data/`:
+   * Run the download_pokec.sh, so the Pokec dataset will be stored in the `data/` folder:
 
      * `soc-pokec-profiles.txt`
      * `soc-pokec-relationships.txt`
@@ -290,7 +290,7 @@ kurs.exe
 
 ## About the modified lemmagen
 
-This project uses a **modified C++ lemmagen** included in `third_party/lemmagen`. The included binary dictionary `data/lem-me-sk.bin` contains Slovak lemmas derived from the Python lemmagen resources and is embedded as the lemmatizer data file. The project ships an adapted native C++ lemmagen wrapper (`lemmatizer_wrapper.*`) that loads `lem-me-sk.bin`.
+This project uses a modified C++ [lemmagen](https://github.com/evillique/lemmagen-c?tab=readme-ov-file) included in `third_party/lemmagen`. The included binary dictionary `data/lem-me-sk.bin` contains Slovak lemmas derived from the Python [lemmagen](https://pypi.org/project/Lemmagen/) resources and is embedded as the lemmatizer data file. The project ships an adapted native C++ lemmagen wrapper (`lemmatizer_wrapper.*`) that loads `lem-me-sk.bin`.
 
 ---
 
@@ -309,6 +309,3 @@ This project uses a **modified C++ lemmagen** included in `third_party/lemmagen`
 * The Fill-Aware Similarity (FAS) explicitly accounts for how much of a profile is filled to avoid overconfident recommendations based on very few shared fields.
 * The repository contains evaluation harnesses and test runners so you can measure hit@k and club recommendation quality on samples.
 
----
-
-Enjoy exploring Pokec recommendations.
