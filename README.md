@@ -18,7 +18,6 @@ A **C++ heuristic recommendation system** built for the Slovak social network **
 ```
 .
 ├── .kaggle
-├── .vscode
 ├── build
 ├── config
 ├── data
@@ -26,24 +25,19 @@ A **C++ heuristic recommendation system** built for the Slovak social network **
 │   ├── ...
 ├── include
 │   ├── bin_reader.h
-│   ├── evaluator.h
-│   ├── graph_builder.h
 │   ├── recommender.h
 │   ├── ...
 │   ├── tfidf_index.h
-│   ├── utils.h
 │   └── vocab_builder.h
 ├── src
 │   ├── bin_reader.cpp
 │   ├── evaluator.cpp
-│   ├── graph_builder.cpp
 │   ├── ...
-│   ├── hiercoarsener.cpp
 │   ├── user_profile.cpp
 │   └── vocab_builder.cpp
-├── python             
+├── python    
+│   ├── templates/         
 │   ├── app.py
-│   ├── templates/
 │   └── config.yaml
 └── third_party
     ├── lemmagen  (modified lemmagen C++ with slovak dict)
