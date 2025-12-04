@@ -2,15 +2,15 @@
 
 <img width="345" height="126" alt="pokec" src="https://github.com/user-attachments/assets/952bd94b-4ddd-4d02-bb43-d8960b75cb9c" />
 
-A **C++** heuristic recommendation system built for the Slovak social network **Pokec** (≈1.6M users). The core is implemented in modern C++ and remains responsible for all heavy work: graph processing, TF–IDF text similarity, and the Fill-Aware Similarity metric used to recommend friends and clubs. A **FastAPI** wrapper (Python) runs the C++ executable as a subprocess, exposes HTTP endpoints that return JSON, and serves a small static HTML UI. Optionally the server can be made publicly reachable via **ngrok** (token provided in a config).
+A **C++ heuristic recommendation system** built for the Slovak social network **Pokec** (≈1.6M users). The core is implemented in modern C++ and remains responsible for all heavy work: graph processing, TF–IDF text similarity, and the Fill-Aware Similarity metric used to recommend friends and clubs. A **FastAPI** wrapper (Python) runs the C++ executable as a subprocess, exposes HTTP endpoints that return JSON, and serves a small static HTML UI. Optionally the server can be made publicly reachable via **ngrok** (token provided in a config).
 
 ## Key features
 
-* Friend recommendation from partial user registration (friends + friends-of-friends).
-* Collaborative friend recommendation using friend → friend-of-friend propagation weighted by similarities.
-* Interest-based friend recommendation (profile similarity using TF–IDF for text columns + other structured fields).
-* Collaborative club (subscription) recommendations.
-* Fill-Aware Similarity ($FAS$) — similarity measure that accounts both for per-field similarity and how many fields are actually filled in (profile completion awareness).
+* **Friend recommendation** from partial user registration (friends + friends-of-friends).
+* **Collaborative friend** recommendation using friend → friend-of-friend propagation weighted by similarities.
+* **Interest-based** friend recommendation (profile similarity using TF–IDF for text columns + other structured fields).
+* **Collaborative club** (subscription) recommendations.
+* **Fill-Aware Similarity** ($FAS$) — similarity measure that accounts both for per-field similarity and how many fields are actually filled in (profile completion awareness).
 
 
 ## Project structure
