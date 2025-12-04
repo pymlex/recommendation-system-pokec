@@ -97,20 +97,12 @@ How the similarity is calculated:
 
 ## Build & run (Windows)
 
-1. **Prerequisites**
-
-   * Visual Studio with C++ toolchain, CMake, Git, Python 3.8+.
-
-2. **Clone**
-
 ```
 git clone https://github.com/pymlex/recommendation-system-pokec.git
 cd recommendation-system-pokec
 ```
 
-3. **Populate `data/`** (profiles, relationships, `lem-me-sk.bin`)
-
-4. **C++ build**
+Load the data, then build the C++ part: 
 
 ```
 mkdir build
@@ -119,21 +111,18 @@ cmake ..
 cmake --build . --config Release
 ```
 
-5. **Python environment**
+Set Python `venv` and install the requirements:
 
 ```
-cd python
+cd ..\python
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-6. **Configure `python/config.yaml`** (set you `ngrok` authtoken)
-
-7. **Start FastAPI wrapper** (it launches C++ backend automatically and waits for readiness):
+Set you `ngrok` authtoken in `python/config.yaml`. Run the backend:
 
 ```
-cd ..
 python python/app.py
 ```
 
