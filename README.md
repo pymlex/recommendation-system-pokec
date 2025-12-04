@@ -1,6 +1,6 @@
 # Recommendation System — Pokec (C++ core + FastAPI API)
 
-<img width="690" height="252" alt="pokec" src="https://github.com/user-attachments/assets/952bd94b-4ddd-4d02-bb43-d8960b75cb9c" />
+<img width="345" height="126" alt="pokec" src="https://github.com/user-attachments/assets/952bd94b-4ddd-4d02-bb43-d8960b75cb9c" />
 
 A **C++** heuristic recommendation system built for the Slovak social network **Pokec** (≈1.6M users).
 The core is implemented in modern C++ and remains responsible for all heavy work: graph processing, TF–IDF text similarity, and the Fill-Aware Similarity metric used to recommend friends and clubs.
