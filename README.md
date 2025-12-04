@@ -1,4 +1,4 @@
-# Recommendation System — Pokec (C++ core + FastAPI API)
+# Pokec Recommendation System
 
 <img width="345" height="126" alt="pokec" src="https://github.com/user-attachments/assets/952bd94b-4ddd-4d02-bb43-d8960b75cb9c" />
 
