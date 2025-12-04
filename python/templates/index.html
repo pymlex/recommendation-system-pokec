@@ -1,0 +1,119 @@
+<!-- python/templates/index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Pokec Recommender — Web UI</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; margin: 24px; max-width: 980px; }
+    input[type="text"] { padding:8px; width:220px; }
+    button { padding:8px 12px; margin-left:6px; }
+    .panel { border:1px solid #eee; padding:12px; border-radius:8px; margin-top:12px; background:#fafafa; }
+    h1 { margin:0 0 12px 0; }
+    .list { max-height:260px; overflow:auto; padding:6px; border-top:1px dashed #eee; margin-top:8px; }
+    .row { display:flex; gap:12px; align-items:center; margin-bottom:8px; }
+    .mono { font-family: monospace; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Pokec Recommender</h1>
+  <p>Loaded users (limit): {{ loaded_users }}</p>
+
+  <div class="panel">
+    <div class="row">
+      <input id="uid" placeholder="Enter user id" />
+      <button id="find">Find</button>
+      <button id="graph">Graph</button>
+      <button id="collab">Collaborative</button>
+      <button id="interest">Interest</button>
+      <button id="clubs">Clubs</button>
+    </div>
+    <div id="out" class="panel" style="display:none"></div>
+  </div>
+
+<script>
+async function show_error(msg) {
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = "<div style='color:red'>"+msg+"</div>";
+}
+
+async function fetchUser(uid) {
+  const res = await fetch(`/api/user/${uid}`);
+  if (!res.ok) {
+    const txt = await res.text();
+    show_error("Error: " + res.status + " " + txt);
+    return;
+  }
+  const j = await res.json();
+  renderUser(j);
+}
+
+function renderUser(j) {
+  const p = j.profile;
+  let html = "<h3>User " + p.user_id + "</h3>";
+  html += "<div><b>Age:</b> " + p.age + " &nbsp; <b>Gender:</b> " + p.gender + " &nbsp; <b>Clubs:</b> " + p.clubs.length + " &nbsp; <b>Friends:</b> " + p.friends.length + "</div>";
+  html += "<h4>Clubs</h4><div class='list'>";
+  if (p.clubs.length) {
+    for (let c of j.clubs_named || p.clubs) {
+      if (typeof c === 'object') html += "<div>" + c.id + " — " + (c.name||"<unknown>") + "</div>";
+      else html += "<div>" + c + "</div>";
+    }
+  } else html += "<div>(none)</div>";
+  html += "</div>";
+  html += "<h4>Friends (first 50)</h4><div class='list'>" + p.friends.slice(0,50).map(x=>"<div>"+x+"</div>").join('') + "</div>";
+  html += "<h4>Token columns (preview)</h4><div class='list'>";
+  for (let t=0; t<Math.min(3, p.token_cols.length); ++t) {
+    const obj = p.token_cols[t];
+    const keys = Object.keys(obj).slice(0,20);
+    html += "<div>col " + t + ": " + keys.map(k=>k+":"+obj[k]).join(", ") + "</div>";
+  }
+  html += "</div>";
+  html += "<h4>Recommendations</h4>";
+  html += "<div><b>Graph</b><div class='list'>" + (j.recommendations.graph || []).map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join('') + "</div></div>";
+  html += "<div><b>Collaborative</b><div class='list'>" + (j.recommendations.collaborative || []).map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join('') + "</div></div>";
+  html += "<div><b>Interest</b><div class='list'>" + (j.recommendations.interest || []).map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join('') + "</div></div>";
+  html += "<div><b>Clubs</b><div class='list'>" + (j.recommendations.clubs || []).map(x=>"<div>"+x.id+" "+(x.name||"")+" score="+(x.score).toFixed(4)+"</div>").join('') + "</div></div>";
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = html;
+}
+
+document.getElementById('find').onclick = async () => {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) return;
+  await fetchUser(uid);
+};
+document.getElementById('graph').onclick = async () => {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) return;
+  const r = await fetch(`/api/recommend/graph/${uid}`);
+  const j = await r.json();
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = "<h3>Graph rec for "+uid+"</h3>" + j.map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join("");
+};
+document.getElementById('collab').onclick = async () => {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) return;
+  const r = await fetch(`/api/recommend/collab/${uid}`);
+  const j = await r.json();
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = "<h3>Collaborative rec for "+uid+"</h3>" + j.map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join("");
+};
+document.getElementById('interest').onclick = async () => {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) return;
+  const r = await fetch(`/api/recommend/interest/${uid}`);
+  const j = await r.json();
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = "<h3>Interest rec for "+uid+"</h3>" + j.map(x=>"<div>"+x.id+" score="+(x.score).toFixed(4)+"</div>").join("");
+};
+document.getElementById('clubs').onclick = async () => {
+  const uid = document.getElementById('uid').value.trim();
+  if (!uid) return;
+  const r = await fetch(`/api/recommend/clubs/${uid}`);
+  const j = await r.json();
+  document.getElementById('out').style.display='block';
+  document.getElementById('out').innerHTML = "<h3>Club rec for "+uid+"</h3>" + j.map(x=>"<div>"+x.id+" "+(x.name||"")+" score="+(x.score).toFixed(4)+"</div>").join("");
+};
+</script>
+</body>
+</html>
