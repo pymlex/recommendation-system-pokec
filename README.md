@@ -10,9 +10,9 @@ A **C++ heuristic recommendation system** built for the Slovak social network **
 * **Collaborative friend** recommendation using friend → friend-of-friend propagation weighted by similarities.
 * **Interest-based** friend recommendation (profile similarity using TF–IDF for text columns + other structured fields).
 * **Collaborative club** (subscription) recommendations.
-* **Fill-Aware Similarity** ($FAS$) — similarity measure that accounts both for per-field similarity and how many fields are actually filled in (profile completion awareness).
+* **Fill-Aware Similarity** (FAS) — similarity measure that accounts both for per-field similarity and how many fields are actually filled in (profile completion awareness).
 
-## Fill-Aware Similarity ($FAS$) Metrics
+## Fill-Aware Similarity (FAS) Metrics
 
 For two profiles define per-field similarity $s_i$ for all fields present in both profiles; aggregate them into $S$ (average of bounded per-field scores) and compute fill factor $F$ as the ratio of common non-empty fields to the total possible fields. The final metric $FAS$ combines $S$ and $F$ harmonically:
 
