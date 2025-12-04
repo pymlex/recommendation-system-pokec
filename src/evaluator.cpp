@@ -2,7 +2,11 @@
 #include "recommender.h"
 #include "tfidf_index.h"
 #include <random>
+#include <vector>
 #include <set>
+#include <algorithm>
+#include <iostream>
+#include <iterator>
 
 using namespace std;
 
