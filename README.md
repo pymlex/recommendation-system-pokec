@@ -12,6 +12,19 @@ A **C++ heuristic recommendation system** built for the Slovak social network **
 * **Collaborative club** (subscription) recommendations.
 * **Fill-Aware Similarity** ($FAS$) — similarity measure that accounts both for per-field similarity and how many fields are actually filled in (profile completion awareness).
 
+## Fill-Aware Similarity ($FAS$) Metrics
+
+For two profiles define per-field similarity $s_i$ for all fields present in both profiles; aggregate them into $S$ (average of bounded per-field scores) and compute fill factor $F$ as the ratio of common non-empty fields to the total possible fields. The final metric $FAS$ combines $S$ and $F$ harmonically:
+
+$$FAS = \frac{2 \cdot S \cdot F}{S + F}$$
+
+This allows the introduction of a penalty for similarity with sparsely filled profiles and addresses the problem of sparsity.
+
+## Field Similarities
+
+* Per-field similarities: TF–IDF cosine for text columns, normalized set overlap for clubs/friends, region match for hierarchical fields, ratio for numeric fields (age/completion).
+* Each raw $s_i$ is transformed via a sigmoid of a z-score computed using column/field normalizers (if available) before averaging into $S$.
+* IDF for text columns is precomputed once and stored in the recommender for efficient scoring.
 
 ## Project structure
 
@@ -82,18 +95,6 @@ As most of the fields are text, we use the TF-IDF and bag-of-words approach for 
 * `GET /api/recommend/interest/{uid}?topk=...`
 * `GET /api/recommend/clubs/{uid}?topk=...`
 * `GET /health` — basic health check and configured `load_users`.
-
-## Fill-Aware Similarity ($FAS$) Metrics
-
-For two profiles define per-field similarity $s_i$ for all fields present in both profiles; aggregate them into $S$ (average of bounded per-field scores) and compute fill factor $F$ as the ratio of common non-empty fields to the total possible fields. The final metric $FAS$ combines $S$ and $F$ harmonically:
-
-$$FAS = \frac{2 \cdot S \cdot F}{S + F}$$
-
-How the similarity is calculated:
-
-* Per-field similarities: TF–IDF cosine for text columns, normalized set overlap for clubs/friends, region match for hierarchical fields, ratio for numeric fields (age/completion).
-* Each raw $s_i$ is transformed via a sigmoid of a z-score computed using column/field normalizers (if available) before averaging into $S$.
-* IDF for text columns is precomputed once and stored in the recommender for efficient scoring.
 
 ## Build & run (Windows)
 
