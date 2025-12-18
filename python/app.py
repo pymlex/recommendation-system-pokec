@@ -35,7 +35,7 @@ class APICLI:
         while True:
             line = self.p.stdout.readline()
             if not line:
-                if (time.time() - start) > 10:
+                if (time.time() - start) > 120:
                     raise RuntimeError("api_cli did not start or produce READY")
                 time.sleep(0.01)
                 continue
@@ -140,11 +140,12 @@ async def api_recommend_clubs(uid: int, topk: int = 20):
     return recs[:topk]
 
 if __name__ == "__main__":
+    """
     if NGROK_TOKEN:
         ngrok.set_auth_token(NGROK_TOKEN)
         public_url = ngrok.connect(PORT)
         print("ngrok public url:", public_url)
-
+    """
     import uvicorn
     print("Server starting: FastAPI wrapper (C++ backend). Loaded users:", LOAD_USERS)
     uvicorn.run("app:app", host=HOST, port=PORT, log_level="info")

@@ -4,3 +4,6 @@ pyyaml
 jinja2
 aiofiles
 pyngrok
+pandas 
+matplotlib 
+seaborn

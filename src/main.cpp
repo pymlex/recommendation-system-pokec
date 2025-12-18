@@ -15,6 +15,7 @@
 #include "recommendation_tests.h"
 #include "user_loader.h"
 #include "ui.h"
+#include "test.h"
 
 #include <iostream>
 #include <vector>
@@ -139,6 +140,11 @@ int main(int argc, char** argv) {
     unordered_map<int,string> club_id_to_name;
     for (auto &kv : vb.club_to_id) {
         club_id_to_name[kv.second] = kv.first;
+    }
+
+    int test = 1;
+    if (test == 1) {
+        run_friends_holdout_test(profiles_map, adj_list, textCols, rec, 100, "data/friends_holdout_results.csv");
     }
 
     run_terminal_ui(profiles_map, adj_list, rec, club_id_to_name, textCols, profiles_map.size());
